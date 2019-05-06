@@ -16,8 +16,7 @@ body{
 }
 
 canvas{
-    background-image: url('img/grid.png');
-    background-color: #fff;
+    background-color: #000;
 }
 
 </style>
@@ -25,8 +24,12 @@ canvas{
     <center>
             <p > score: <span id="score"></span></p>
             <canvas id="tetrisboardoutline" height="640px" width="400px"></canvas>
-            <div>
-                canvas
+            <div id="next">
+                <canvas id="piece1" height="100px" width="100px"></canvas>
+                <canvas id="piece2" height="100px" width="100px"></canvas>
+                <canvas id="piece3" height="100px" width="100px"></canvas>
+                <canvas id="piece4" height="100px" width="100px"></canvas>
+                <canvas id="piece5" height="100px" width="100px"></canvas>
             </div>
     </center>
 </body>
@@ -39,8 +42,40 @@ canvas{
     var arena = creatematrix(10, 16);
 
     drawpiece(arena, {z: 0, y: 0}, 1);  
-       
-    
+
+    var draw1 = document.getElementById("piece1");
+    var draw2 = document.getElementById("piece2");
+    var draw3 = document.getElementById("piece3");
+    var draw4 = document.getElementById("piece4");
+    var draw5 = document.getElementById("piece5");
+    var drawcontext1 = draw1.getContext('2d');
+    var drawcontext2 = draw2.getContext('2d');
+    var drawcontext3 = draw3.getContext('2d');
+    var drawcontext4 = draw4.getContext('2d');
+    var drawcontext5 = draw5.getContext('2d');
+    drawcontext1.scale(20, 20);
+    drawcontext2.scale(20, 20);
+    drawcontext3.scale(20, 20);
+    drawcontext4.scale(20, 20);
+    drawcontext5.scale(20, 20);   
+    function drawnextpiece(piece, context){
+        var colors = ['#808080', '#F538FF', '#FFE138', '#FF8E0D', '#3877FF', '#0DC2FF', '#FF0D72', '#0DFF72'];  
+
+                    piece.forEach((row, z) => {
+                    row.forEach((value, y) => {       
+                                // drawpixel(y, z, offset, value);
+                                if(value !== 0){
+                                    context.fillStyle = '#000';
+                                    context.fillRect(y, z, 1, 1);
+                                    context.fillStyle = colors[value];
+                                    context.fillRect(y+ 0.0125, z+ 0.0125, 0.975, 0.975);
+                                }
+
+                    });
+                });
+    }
+
+
     function drawpiece(piece, offset, mode){
         var colors = ['#808080', '#F538FF', '#FFE138', '#FF8E0D', '#3877FF', '#0DC2FF', '#FF0D72', '#0DFF72'];  
         piece.forEach((row, z) => {
@@ -111,6 +146,60 @@ canvas{
             matrix.reverse();
         }
 
+    }
+
+    function nextplayertype(type){
+        if(type == "T"){
+            return [
+            [0, 0, 0, 0, 0],
+            [0, 0, 1, 0, 0],
+            [0, 1, 1, 1, 0],
+            [0, 0, 0, 0, 0],
+            ];
+        }else if(type == "O"){
+            return [
+            [0, 0, 0, 0],
+            [0, 2, 2, 0],
+            [0, 2, 2, 0],
+            [0, 0, 0, 0],
+            ];
+        }else if(type == "L"){
+            return [
+            [0, 0, 0, 0, 0],
+            [0, 0, 0, 3, 0],
+            [0, 3, 3, 3, 0],
+            [0, 0, 0, 0, 0],
+            ];
+        }else if(type == "J"){
+            return [
+            [0, 0, 0, 0, 0],
+            [0, 4, 0, 0, 0],
+            [0, 4, 4, 4, 0],
+            [0, 0, 0, 0, 0],
+            ];
+        }else if(type == "I"){
+            return [
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            [5, 5, 5, 5],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+            ];
+        }else if(type == "Z"){
+            return [
+            [0, 0, 0, 0, 0],
+            [0, 6, 6, 0, 0],
+            [0, 0, 6, 6, 0],
+            [0, 0, 0, 0, 0],
+            ];
+        }else if(type == "S"){
+            return [
+            [0, 0, 0, 0, 0],
+            [0, 0, 7, 7, 0],
+            [0, 7, 7, 0, 0],
+            [0, 0, 0, 0, 0],
+            ];
+        }
     }
 
     function playertype(type){
@@ -240,10 +329,20 @@ canvas{
             player.position.y -= dir;
         }
     }
-
-    function playergen(){
-        const gen = "TOLJIZS";
-        player.piece = playertype(gen[gen.length * Math.random() | 0]);
+    var piecearray = [];
+    function playergen(mode){
+        const gen = ["T", "O", "L", "J", "I", "Z", "S"];
+        if(mode == "initialise"){
+            for(i = 0; i < 6; i++){
+                piecearray[i+1] = gen[Math.floor(gen.length * Math.random())];
+            }
+        }else if(mode == "ongoing"){
+            piecearray.splice(1,1);
+            piecearray[6] = gen[Math.floor(gen.length * Math.random())];
+        }
+        player.piece = playertype(piecearray[1]);
+        
+        console.log(piecearray);
         player.position.z = 0;
         player.position.y = (arena[0].length / 2 | 0) - (player.piece[0].length / 2 | 0);
         if(collide(arena, player)){
@@ -251,6 +350,7 @@ canvas{
             player.score = 0;
             updatescore();
         }
+        
     }
 
     function playerdrop(check){  
@@ -276,7 +376,12 @@ canvas{
     function collideeffect(){
         player.position.z--;
         mergematrix(arena, player);
-        playergen();
+        playergen("ongoing");
+        drawnextpiece(nextplayertype(piecearray[2]), drawcontext1);
+        drawnextpiece(nextplayertype(piecearray[3]), drawcontext2);
+        drawnextpiece(nextplayertype(piecearray[4]), drawcontext3);
+        drawnextpiece(nextplayertype(piecearray[5]), drawcontext4);
+        drawnextpiece(nextplayertype(piecearray[6]), drawcontext5);
         rowfull();
         updatescore();
     }
@@ -297,7 +402,12 @@ canvas{
         }
     });
 
-    playergen();
+    playergen("initialise");
+    drawnextpiece(nextplayertype(piecearray[2]), drawcontext1);
+    drawnextpiece(nextplayertype(piecearray[3]), drawcontext2);
+    drawnextpiece(nextplayertype(piecearray[4]), drawcontext3);
+    drawnextpiece(nextplayertype(piecearray[5]), drawcontext4);
+    drawnextpiece(nextplayertype(piecearray[6]), drawcontext5);
     updatescore();
     update();
     
